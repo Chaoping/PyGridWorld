@@ -102,17 +102,53 @@ class GridWorldUI():
 			print('wrong input')
 		self.canvas.update()
 
-	def update_resource(self, water, food):
+	def update_physiology(self, water, food):
 		self.canvas.itemconfig(self.water, text = 'Water: ' + str(water) + '.')
 		self.canvas.itemconfig(self.food, text = 'Food: ' + str(food) + '.')
 		self.canvas.update()
 
 	def update_water(self, x1, x2):
+		# remove existing ones
+		for i in self.water_objects:
+			self.canvas.delete(i)
+		
+		# draw new ones
 		self.water_objects = []
+		for i in range(x1.__len__()):
+			self.water_objects.append(self.canvas.create_polygon(
+				self.WINDOW_MARGIN + x1[i] * self.x1_interval, 
+				self.WINDOW_MARGIN + x2[i] * self.x2_interval,
+
+				self.WINDOW_MARGIN + (x1[i] + 1) * self.x1_interval, 
+				self.WINDOW_MARGIN + (x2[i] + 1) * self.x2_interval,
+
+				self.WINDOW_MARGIN + x1[i] * self.x1_interval, 
+				self.WINDOW_MARGIN + (x2[i] + 1) * self.x2_interval,
+
+				fill = self.WATER_COLOR
+				))
 
 
 	def update_food(self, x1, x2):
+		# remove existing ones
+		for i in self.food_objects:
+			self.canvas.delete(i)
+		
+		# draw new ones
+		self.food_objects = []
+		for i in range(x1.__len__()):
+			self.food_objects.append(self.canvas.create_polygon(
+				self.WINDOW_MARGIN + x1[i] * self.x1_interval, 
+				self.WINDOW_MARGIN + x2[i] * self.x2_interval,
 
+				self.WINDOW_MARGIN + (x1[i] + 1) * self.x1_interval, 
+				self.WINDOW_MARGIN + (x2[i] + 1) * self.x2_interval,
+
+				self.WINDOW_MARGIN + (x1[i] + 1) * self.x1_interval, 
+				self.WINDOW_MARGIN + x2[i] * self.x2_interval,
+
+				fill = self.FOOD_COLOR
+				))
 	
 
 
@@ -125,12 +161,21 @@ class GridWorldUI():
 		self.agent = self.spawn_agent(x1_new,x2_new)
 		self.canvas.update()
 		
+		
 		while True:
 			water = input("update water")
 			food  = input ("update food")
-
-			self.update_resource(water, food)
+			self.update_physiology(water, food)
 			
+			
+			x1 = [int(x) for x in input("x1").split()]
+			x2 = [int(x) for x in input("x2").split()]
+			self.update_water(x1, x2)
+			
+			x1 = [int(x) for x in input("x1").split()]
+			x2 = [int(x) for x in input("x2").split()]
+			self.update_food(x1, x2)
+
 			direction = getch()
 			status = self.move_agent(direction)
 			if(status):
@@ -141,5 +186,5 @@ class GridWorldUI():
 
 
 
-gw = GridWorldUI(100,80)
-gw.test()
+#gw = GridWorldUI(100,80)
+#gw.test()

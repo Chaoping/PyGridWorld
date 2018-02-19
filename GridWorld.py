@@ -1,3 +1,4 @@
+import GridWorldUI
 import random
 import numpy as np
 
@@ -55,6 +56,11 @@ class GridWorld():
             ] = 1
         
 
+        # Visualize
+        if self.VISUALIZE:
+            ui = GridWorldUI.GridWorldUI(self.WORLD_SIZE_1,self.WORLD_SIZE_2)
+
+
     def test(self):
         print(self.water_matrix)
         print(self.food_matrix)
@@ -69,4 +75,5 @@ class GridWorld():
 
 
 a = GridWorld()
+input()
 a.test()
