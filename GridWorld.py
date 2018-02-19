@@ -18,5 +18,20 @@ class GridWorld():
 
     VISUALIZE = True
     
+    # instance variables
+    self.agent_coord = [0,0]
+    
+
+
+
     def __init__(self):
        pass 
+
+    def 
+
+
+    # It takes an action input, caculate immedate reward,
+    # generate new environment state and give part of the 
+    # state information to the agent.
+    def action(self):
+        return ()
