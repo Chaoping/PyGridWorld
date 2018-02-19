@@ -18,6 +18,8 @@ class GridWorldUI():
 	GRID_COLOR = 'black'
 	AGENT_COLOR = 'black'
 	UI_TEXT_COLOR = 'white'
+	WATER_COLOR = 'blue'
+	FOOD_COLOR = 'brown'
 
 
 	def __init__(self, x1_max, x2_max):
@@ -52,6 +54,8 @@ class GridWorldUI():
 				self.WINDOW_WIDTH - self.WINDOW_MARGIN, self.WINDOW_MARGIN + i * self.x2_interval,
 				fill = self.GRID_COLOR, width = 2
 			)
+		self.water_objects = []
+		self.food_objects = []
 
 
 		# Create UI elements
@@ -77,6 +81,10 @@ class GridWorldUI():
 			fill = self.AGENT_COLOR
 		)
 
+
+	'''
+	maybe later change to update agent altogether????
+	'''
 	def move_agent(self, direction):
 		if direction == 'w':
 			self.canvas.move(self.agent, 0, -self.x2_interval)
@@ -99,7 +107,11 @@ class GridWorldUI():
 		self.canvas.itemconfig(self.food, text = 'Food: ' + str(food) + '.')
 		self.canvas.update()
 
-	
+	def update_water(self, x1, x2):
+		self.water_objects = []
+
+
+	def update_food(self, x1, x2):
 
 	
 
