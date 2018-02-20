@@ -3,13 +3,13 @@ import numpy as np
 import random
 import time
 import enum
-from _Getch import *
+
 
 
 class GridWorldUI():
 	# Simulation CONSTANTS
-	WINDOW_HEIGHT = 900
-	WINDOW_WIDTH = 1200
+	WINDOW_HEIGHT = 400
+	WINDOW_WIDTH = 500
 	WINDOW_MARGIN = 30
 	UI_MARGIN_1 = 200
 	UI_MARGIN_2 = 80
@@ -22,7 +22,7 @@ class GridWorldUI():
 	FOOD_COLOR = 'brown'
 
 
-	def __init__(self, x1_max, x2_max):
+	def __init__(self, x1_max, x2_max, agent_x1, agent_x2):
 		
 		## Create a canvas
 		self.canvas = tkinter.Canvas(
@@ -70,10 +70,12 @@ class GridWorldUI():
 			text = 'Food: ',  font = "Roboto 30",
 			fill = self.UI_TEXT_COLOR)
 
+		self.spawn_agent(agent_x1,agent_x2)
 		self.canvas.update()
 
-	def spawn_agent(self, x_1, x_2):
-		return self.canvas.create_rectangle(
+	
+	def spawn_agent(self, x_2, x_1):
+		self.agent = self.canvas.create_rectangle(
 			self.WINDOW_MARGIN + (float(x_1) + 0.25) * self.x1_interval, 
 			self.WINDOW_MARGIN + (float(x_2) + 0.25) * self.x2_interval,
 			self.WINDOW_MARGIN + (float(x_1) + 0.75) * self.x1_interval, 
@@ -81,33 +83,24 @@ class GridWorldUI():
 			fill = self.AGENT_COLOR
 		)
 
+	def move_agent(self, x_2, x_1):
+		self.canvas.coords(
+			self.agent, 
+			self.WINDOW_MARGIN + (float(x_1) + 0.25) * self.x1_interval, 
+			self.WINDOW_MARGIN + (float(x_2) + 0.25) * self.x2_interval,
+			self.WINDOW_MARGIN + (float(x_1) + 0.75) * self.x1_interval, 
+			self.WINDOW_MARGIN + (float(x_2) + 0.75) * self.x2_interval)
 
-	'''
-	maybe later change to update agent altogether????
-	'''
-	def move_agent(self, direction):
-		if direction == 'w':
-			self.canvas.move(self.agent, 0, -self.x2_interval)
-		elif direction == 'a':
-			self.canvas.move(self.agent, -self.x1_interval, 0)
-		elif direction == 's':
-			self.canvas.move(self.agent, 0, self.x2_interval)
-		elif direction == 'd':
-			self.canvas.move(self.agent, self.x1_interval, 0)
-		elif direction == ' ':
-			pass
-		elif direction == 't':
-			return 1
-		else:
-			print('wrong input')
 		self.canvas.update()
 
+	# Display the physiology variables under the map
 	def update_physiology(self, water, food):
 		self.canvas.itemconfig(self.water, text = 'Water: ' + str(water) + '.')
 		self.canvas.itemconfig(self.food, text = 'Food: ' + str(food) + '.')
 		self.canvas.update()
 
-	def update_water(self, x1, x2):
+	# Draw water on map
+	def update_water(self, x2, x1):
 		# remove existing ones
 		for i in self.water_objects:
 			self.canvas.delete(i)
@@ -129,7 +122,7 @@ class GridWorldUI():
 				))
 
 
-	def update_food(self, x1, x2):
+	def update_food(self, x2, x1):
 		# remove existing ones
 		for i in self.food_objects:
 			self.canvas.delete(i)
@@ -150,6 +143,9 @@ class GridWorldUI():
 				fill = self.FOOD_COLOR
 				))
 	
+	# agent's view
+	#def 
+
 
 
 
@@ -158,7 +154,7 @@ class GridWorldUI():
 	def test(self):
 		x1_new = input("starting x1:")
 		x2_new = input("starting x2:")
-		self.agent = self.spawn_agent(x1_new,x2_new)
+		#self.agent = self.spawn_agent(x1_new,x2_new)
 		self.canvas.update()
 		
 		
@@ -176,10 +172,7 @@ class GridWorldUI():
 			x2 = [int(x) for x in input("x2").split()]
 			self.update_food(x1, x2)
 
-			direction = getch()
-			status = self.move_agent(direction)
-			if(status):
-				break
+			
 			
 	
 

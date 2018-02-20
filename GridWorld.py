@@ -5,6 +5,7 @@ import numpy as np
 
 
 
+
 class GridWorld():
     
     # World CONSTANTS 
@@ -30,17 +31,28 @@ class GridWorld():
     VISUALIZE = True
 
     def __init__(self):
+        # initialize simulator
+        self.counter = 0
+        
         # initialize world
-        # note: multiple instances of same type of resource may spawn at the same position.         
-        self.water_matrix = np.zeros((self.WORLD_SIZE_2, self.WORLD_SIZE_1))    
-        self.water_matrix[ ## spawn water
+        # note: multiple instances of same type of resource may spawn at the same position.
+        self.water_coords = (
             np.random.choice(range(self.WORLD_SIZE_2),self.N_WATER_RESOURCE),
             np.random.choice(range(self.WORLD_SIZE_1),self.N_WATER_RESOURCE)
+        )
+        self.food_coords = (
+            np.random.choice(range(self.WORLD_SIZE_2),self.N_WATER_RESOURCE),
+            np.random.choice(range(self.WORLD_SIZE_1),self.N_WATER_RESOURCE)
+        )        
+        
+        
+        self.water_matrix = np.zeros((self.WORLD_SIZE_2, self.WORLD_SIZE_1))    
+        self.water_matrix[ ## spawn water
+            self.water_coords[0], self.water_coords[1]
             ] = 1
         self.food_matrix = np.zeros((self.WORLD_SIZE_2, self.WORLD_SIZE_1))
         self.food_matrix[ ## spawn food
-            np.random.choice(range(self.WORLD_SIZE_2),self.N_FOOD_RESOURCE),
-            np.random.choice(range(self.WORLD_SIZE_1),self.N_FOOD_RESOURCE)
+            self.food_coords[0], self.food_coords[1]
             ] = 1
 
         # initialize agent
@@ -58,7 +70,8 @@ class GridWorld():
          
         # Visualize
         if self.VISUALIZE:
-            ui = GridWorldUI.GridWorldUI(self.WORLD_SIZE_1,self.WORLD_SIZE_2)
+            self.ui = GridWorldUI.GridWorldUI(self.WORLD_SIZE_1,self.WORLD_SIZE_2, self.agent_coord[0], self.agent_coord[1])
+            #self.ui.spawn_agent(self.agent_coord[0], self.agent_coord[1])
 
     def update_view(self):
         coordinates = (
@@ -100,12 +113,12 @@ class GridWorld():
 
         
         else: # construct a bigger matrix to corp from
-            augmented_matrix = np.zeros((
+            augmented_water = np.zeros((
                 self.WORLD_SIZE_2 + 2 * self.AGENT_SIGHT, 
                 self.WORLD_SIZE_1 + 2 * self.AGENT_SIGHT))
             
             # water
-            augmented_matrix[
+            augmented_water[
                 self.AGENT_SIGHT:self.WORLD_SIZE_2 + self.AGENT_SIGHT,
                 self.AGENT_SIGHT:self.WORLD_SIZE_1 + self.AGENT_SIGHT,
                 ] = self.water_matrix
@@ -113,22 +126,27 @@ class GridWorld():
 
             '''debug'''
             print("temp water matrix")
-            print(augmented_matrix)
-            
+            print(augmented_water)
+            print("coordinates: ")
+            print(coordinates)
 
-            self.agent_water_view = augmented_matrix[
-                coordinates[0] + self.AGENT_SIGHT :coordinates[1] + self.AGENT_SIGHT + 1,
-                coordinates[2] + self.AGENT_SIGHT :coordinates[3] + self.AGENT_SIGHT + 1
+            self.agent_water_view = augmented_water[
+                (coordinates[0] + self.AGENT_SIGHT) :(coordinates[1] + self.AGENT_SIGHT + 1),
+                (coordinates[2] + self.AGENT_SIGHT) :(coordinates[3] + self.AGENT_SIGHT + 1)
             ]
 
 
             # food
-            augmented_matrix[
+            augmented_food = np.zeros((
+                self.WORLD_SIZE_2 + 2 * self.AGENT_SIGHT, 
+                self.WORLD_SIZE_1 + 2 * self.AGENT_SIGHT))
+
+            augmented_food[
                 self.AGENT_SIGHT:self.WORLD_SIZE_2 + self.AGENT_SIGHT,
                 self.AGENT_SIGHT:self.WORLD_SIZE_1 + self.AGENT_SIGHT,
                 ] = self.food_matrix
 
-            self.agent_food_view = augmented_matrix[
+            self.agent_food_view = augmented_food[
                 coordinates[0] + self.AGENT_SIGHT :coordinates[1] + self.AGENT_SIGHT + 1,
                 coordinates[2] + self.AGENT_SIGHT :coordinates[3] + self.AGENT_SIGHT + 1
             ]
@@ -145,7 +163,52 @@ class GridWorld():
     # generate new environment state and give part of the 
     # state information to the agent.
     def action(self, direction):
+        if direction == 'w':
+            if self.agent_coord[0] > 0:
+                self.agent_coord[0] = self.agent_coord[0] - 1
+        elif direction == 'a':
+            if self.agent_coord[1] > 1:
+                self.agent_coord[1] = self.agent_coord[1] - 1
+        elif direction == 's':
+            if self.agent_coord[0] < self.WORLD_SIZE_2 - 1:
+                self.agent_coord[0] = self.agent_coord[0] + 1
+        elif direction == 'd':
+            if self.agent_coord[1] < self.WORLD_SIZE_1 - 1:
+                self.agent_coord[1] = self.agent_coord[1] + 1
+        elif direction == ' ':
+            pass
         
+        self.counter += 1
+        print ("step: " + str(self.counter))
+
+
+        self.update_view()
+
+        # self.world_dynamics()
+
+
+        if self.VISUALIZE:
+            self.ui.move_agent(self.agent_coord[0],self.agent_coord[1])
+            self.ui.update_water(self.water_coords[0], self.water_coords[1])
+            self.ui.update_food(self.food_coords[0], self.food_coords[1])
+            
+
+
+            
+            print("coordinates:")
+            print(self.agent_coord)
+            
+            print("water map:")
+            print(self.water_matrix)
+            print("agent sees water:")
+            print(self.agent_water_view)
+
+
+            print("agent sees food")
+            print(self.agent_food_view)
+
+            print("agent sees map")
+            print(self.agent_land_view)
 
         
         return ()
@@ -164,8 +227,11 @@ class GridWorld():
         print(self.water_matrix)
         print(self.agent_water_view)
 
+        
 
+'''
 a = GridWorld()
-input()
+input("model created. waiting for command")
 a.test()
 input()
+'''
