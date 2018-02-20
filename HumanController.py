@@ -7,11 +7,12 @@ class HumanController():
 
     def run(self):
         while True:
-            print("gimme direction")
+            print("gimme a direction")
             direction = getch()
-            self.gw.action(direction)
             if direction == 't' or direction == 'q':
                 break
+            self.gw.action(direction)
+            
 
 
 hc = HumanController()
