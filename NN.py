@@ -6,7 +6,7 @@ import math
 
 class NeuralNetwork():
     
-    ETA = 0.00001
+    ETA = 0.0001
 
     # A Neural Network    
     # An instance of the NN can be either created with 
@@ -34,12 +34,12 @@ class NeuralNetwork():
                 
         for i in range(len(structure)-1):
             self.weights.append(
-                np.random.rand(structure[i+1], structure[i] + 1)
+                (np.random.rand(structure[i+1], structure[i] + 1) - 0.5) / 100
             )
             self.gradients.append(np.zeros(self.weights[i].shape))
  
         # weights for the output layer:
-        self.final_weights = np.random.rand(1, structure[-1] + 1)
+        self.final_weights = (np.random.rand(1, structure[-1] + 1) - 0.5) / 100
         self.final_gradients = np.zeros(self.final_weights.shape)
 
         # '''debug'''
@@ -106,12 +106,21 @@ class NeuralNetwork():
         A = [] # a container to store all the activations
         A.append(x) # the 0th layer is actually the inputs
 
+        
+
 
         # feed forward
         for i in range(len(self.structure) - 1):
             A.append(
                 self.tanh(np.dot(self.weights[i], np.concatenate((np.ones((1,1)),A[i])))) 
             )
+
+        # print("````")
+        # print(np.dot(self.weights[0], np.concatenate((np.ones((1,1)),A[0]))))
+        # print(self.tanh(np.dot(self.weights[0], np.concatenate((np.ones((1,1)),A[0])))))
+
+        # print("????")
+        # print(self.tanh(26.71298082))
 
 
         y_predicted = np.dot(self.final_weights, np.concatenate((np.ones((1,1)),A[-1])))
@@ -127,24 +136,9 @@ class NeuralNetwork():
         pass
 
 
-# ## test
-# nn = NeuralNetwork()
-# test_x = np.ones((3,1))
-# nn.new([3,2,5])
-
-
-
-# nn.train(test_x, 15)
-# y = []
-# for i in range(300):
-#     y.append(nn.predict(test_x)[0,0])
-#     nn.train(test_x,15)
-
-# print(y[:])
 
 
 #test with a polynomial target function
-
 
 def poly(x):
     a = np.array([1,2,3])
@@ -156,34 +150,24 @@ def poly(x):
     return y
 
 
+def test():
+    nn_poly = NeuralNetwork()
+    nn_poly.new([3,200,200])
 
-#print(y)
 
-
-nn_poly = NeuralNetwork()
-
-nn_poly.new([3,30,30])
-
-error = []
-f = open("errors.txt", 'w')
-for j in range(100):
-    errors = 0
-    for i in range(20000):
+    for j in range(100):
+        for i in range(20000):
+            x = (np.random.rand(3,1) - 0.5) * 2
+            y = poly(x)
+            nn_poly.train(x,y)
+            
         x = (np.random.rand(3,1) - 0.5) * 2
         y = poly(x)
-        nn_poly.train(x,y)
-        
-    x = (np.random.rand(3,1) - 0.5) * 2
-    y = poly(x)
-    ybar = nn_poly.predict(x)[0,0]
+        ybar = nn_poly.predict(x)[0,0]
 
-    print("y = " + str(y[0]))
-    print("y^= "+ str(ybar))
-    print("e = " + str((y[0] - ybar)**2))
-    print()
+        print("y = " + str(y[0]))
+        print("y^= "+ str(ybar))
+        print("e = " + str((y[0] - ybar)**2))
+        print()
 
-
-print(error)
-f.close()
-
-
+#test()

@@ -210,8 +210,8 @@ class GridWorldUI():
 				# land
 				if land_view[i,j] == 1:
 					# draw a cross
-					print("incomplete view")
-					print(self.agent_grid_coords)
+					# print("limited view")
+					# print(self.agent_grid_coords)
 					self.agent_objects.append(
 						self.canvas.create_line(
 							# bottom-left

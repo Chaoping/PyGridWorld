@@ -9,11 +9,11 @@ import numpy as np
 class GridWorld():
     
     # World CONSTANTS 
-    WORLD_SIZE_1 = 20
-    WORLD_SIZE_2 = 20
-    N_WATER_RESOURCE = 2
-    N_FOOD_RESOURCE = 2
-    RESOURCE_RELOCATE_RATE = 0.0 ## probability that a resource relocate. Setting to 0 disables relocation.
+    WORLD_SIZE_1 = 10
+    WORLD_SIZE_2 = 10
+    N_WATER_RESOURCE = 10
+    N_FOOD_RESOURCE = 10
+    RESOURCE_RELOCATE_RATE = 0.01 ## probability that a resource relocate. Setting to 0 disables relocation.
      
     
     # Agent CONSTANTS
@@ -29,7 +29,7 @@ class GridWorld():
 
     # SIMULATION CONSTANTS
     VISUALIZE = True
-    DEBUG = True
+    DEBUG = False
 
     def __init__(self):
         # initialize simulator
@@ -118,11 +118,11 @@ class GridWorld():
                 ] = self.water_matrix
 
 
-            '''debug'''
-            print("temp water matrix")
-            print(augmented_water)
-            print("coordinates: ")
-            print(coordinates)
+            # '''debug'''
+            # print("temp water matrix")
+            # print(augmented_water)
+            # print("coordinates: ")
+            # print(coordinates)
 
             self.agent_water_view = augmented_water[
                 (coordinates[0] + self.AGENT_SIGHT) :(coordinates[1] + self.AGENT_SIGHT + 1),
@@ -183,8 +183,24 @@ class GridWorld():
         self.food_matrix = self.food_string.reshape((self.WORLD_SIZE_2, self.WORLD_SIZE_1))
         self.food_coords = np.where(self.food_matrix == 1)
 
-    #def relocate_resource(self):
+    def relocate_resources(self):
+        for i in range(self.N_WATER_RESOURCE):
+            if random.random() < self.RESOURCE_RELOCATE_RATE:
+                self.water_matrix[self.water_coords[0][i], self.water_coords[1][i]] = 0
+                while not self.water_matrix.sum() == self.N_WATER_RESOURCE:
+                    self.water_matrix[random.randint(0,self.WORLD_SIZE_2-1),random.randint(0,self.WORLD_SIZE_1-1)] = 1
+
+        for i in range(self.N_FOOD_RESOURCE):
+            if random.random() < self.RESOURCE_RELOCATE_RATE:
+                self.food_matrix[self.food_coords[0][i], self.food_coords[1][i]] = 0
+                while not self.food_matrix.sum() == self.N_FOOD_RESOURCE:
+                    self.food_matrix[random.randint(0,self.WORLD_SIZE_2-1),random.randint(0,self.WORLD_SIZE_1-1)] = 1
         
+
+
+        self.water_coords = np.where(self.water_matrix == 1)
+        self.food_coords = np.where(self.food_matrix == 1)
+
         
         
 
@@ -196,77 +212,167 @@ class GridWorld():
     # generate new environment state and give part of the 
     # state information to the agent.
     def action(self, direction):
-        previous_index = self.agent_coord[0] * self.WORLD_SIZE_1 + self.agent_coord[1]
+        # previous_index = self.agent_coord[0] * self.WORLD_SIZE_1 + self.agent_coord[1]
         
         # flag if the agent was on any resource before the move
-        if self.water_string[previous_index] == 1:
-            water_to_relocate = True 
-        else:
-            water_to_relocate = False
+        # if self.water_string[previous_index] == 1:
+        #     water_to_relocate = True 
+        # else:
+        #     water_to_relocate = False
 
-        if self.food_string[previous_index] == 1:
-            food_to_relocate = True 
-        else: 
-            food_to_relocate = False
+        # if self.food_string[previous_index] == 1:
+        #     food_to_relocate = True 
+        # else: 
+        #     food_to_relocate = False
 
         self.counter += 1
         print ("step: " + str(self.counter))
 
         # move
-        if direction == 'w':
+        if direction[0]:
             if self.agent_coord[0] > 0:
                 self.agent_coord[0] = self.agent_coord[0] - 1
-                if water_to_relocate:
-                    self.water_string[previous_index] = 0
-                    while not sum(self.water_string) == self.N_WATER_RESOURCE:
-                        self.water_string[random.randint(0,self.n_tiles - 1)] = 1
-                    self.water_coords = np.where(self.water_matrix == 1)
-                if food_to_relocate:
-                    self.food_string[previous_index] = 0
-                    while not sum(self.food_string) == self.N_FOOD_RESOURCE:
-                        self.food_string[random.randint(0,self.n_tiles - 1)] = 1
-                    self.food_coords = np.where(self.food_matrix == 1)
-        elif direction == 'a':
+                
+        elif direction[1]:
             if self.agent_coord[1] > 0:
                 self.agent_coord[1] = self.agent_coord[1] - 1
-                if water_to_relocate:
-                    self.water_string[previous_index] = 0
-                    while not sum(self.water_string) == self.N_WATER_RESOURCE:
-                        self.water_string[random.randint(0,self.n_tiles - 1)] = 1
-                    self.water_coords = np.where(self.water_matrix == 1)
-                if food_to_relocate:
-                    self.food_string[previous_index] = 0
-                    while not sum(self.food_string) == self.N_FOOD_RESOURCE:
-                        self.food_string[random.randint(0,self.n_tiles - 1)] = 1
-                    self.food_coords = np.where(self.food_matrix == 1)
-        elif direction == 's':
+                
+        elif direction[2]:
             if self.agent_coord[0] < self.WORLD_SIZE_2 - 1:
                 self.agent_coord[0] = self.agent_coord[0] + 1
-                if water_to_relocate:
-                    self.water_string[previous_index] = 0
-                    while not sum(self.water_string) == self.N_WATER_RESOURCE:
-                        self.water_string[random.randint(0,self.n_tiles - 1)] = 1
-                    self.water_coords = np.where(self.water_matrix == 1)
-                if food_to_relocate:
-                    self.food_string[previous_index] = 0
-                    while not sum(self.food_string) == self.N_FOOD_RESOURCE:
-                        self.food_string[random.randint(0,self.n_tiles - 1)] = 1
-                    self.food_coords = np.where(self.food_matrix == 1)
-        elif direction == 'd':
+                
+        elif direction[3]:
             if self.agent_coord[1] < self.WORLD_SIZE_1 - 1:
                 self.agent_coord[1] = self.agent_coord[1] + 1
-                if water_to_relocate:
-                    self.water_string[previous_index] = 0
-                    while not sum(self.water_string) == self.N_WATER_RESOURCE:
-                        self.water_string[random.randint(0,self.n_tiles - 1)] = 1
-                    self.water_coords = np.where(self.water_matrix == 1)
-                if food_to_relocate:
-                    self.food_string[previous_index] = 0
-                    while not sum(self.food_string) == self.N_FOOD_RESOURCE:
-                        self.food_string[random.randint(0,self.n_tiles - 1)] = 1
-                    self.food_coords = np.where(self.food_matrix == 1)
-        elif direction == ' ':
+                
+        elif direction[4]:
             pass
+
+
+
+
+
+        # if direction[0]:
+        #     if self.agent_coord[0] > 0:
+        #         self.agent_coord[0] = self.agent_coord[0] - 1
+        #         if water_to_relocate:
+        #             self.water_string[previous_index] = 0
+        #             while not sum(self.water_string) == self.N_WATER_RESOURCE:
+        #                 self.water_string[random.randint(0,self.n_tiles - 1)] = 1
+        #             self.water_coords = np.where(self.water_matrix == 1)
+        #         if food_to_relocate:
+        #             self.food_string[previous_index] = 0
+        #             while not sum(self.food_string) == self.N_FOOD_RESOURCE:
+        #                 self.food_string[random.randint(0,self.n_tiles - 1)] = 1
+        #             self.food_coords = np.where(self.food_matrix == 1)
+        # elif direction[1]:
+        #     if self.agent_coord[1] > 0:
+        #         self.agent_coord[1] = self.agent_coord[1] - 1
+        #         if water_to_relocate:
+        #             self.water_string[previous_index] = 0
+        #             while not sum(self.water_string) == self.N_WATER_RESOURCE:
+        #                 self.water_string[random.randint(0,self.n_tiles - 1)] = 1
+        #             self.water_coords = np.where(self.water_matrix == 1)
+        #         if food_to_relocate:
+        #             self.food_string[previous_index] = 0
+        #             while not sum(self.food_string) == self.N_FOOD_RESOURCE:
+        #                 self.food_string[random.randint(0,self.n_tiles - 1)] = 1
+        #             self.food_coords = np.where(self.food_matrix == 1)
+        # elif direction[2]:
+        #     if self.agent_coord[0] < self.WORLD_SIZE_2 - 1:
+        #         self.agent_coord[0] = self.agent_coord[0] + 1
+        #         if water_to_relocate:
+        #             self.water_string[previous_index] = 0
+        #             while not sum(self.water_string) == self.N_WATER_RESOURCE:
+        #                 self.water_string[random.randint(0,self.n_tiles - 1)] = 1
+        #             self.water_coords = np.where(self.water_matrix == 1)
+        #         if food_to_relocate:
+        #             self.food_string[previous_index] = 0
+        #             while not sum(self.food_string) == self.N_FOOD_RESOURCE:
+        #                 self.food_string[random.randint(0,self.n_tiles - 1)] = 1
+        #             self.food_coords = np.where(self.food_matrix == 1)
+        # elif direction[3]:
+        #     if self.agent_coord[1] < self.WORLD_SIZE_1 - 1:
+        #         self.agent_coord[1] = self.agent_coord[1] + 1
+        #         if water_to_relocate:
+        #             self.water_string[previous_index] = 0
+        #             while not sum(self.water_string) == self.N_WATER_RESOURCE:
+        #                 self.water_string[random.randint(0,self.n_tiles - 1)] = 1
+        #             self.water_coords = np.where(self.water_matrix == 1)
+        #         if food_to_relocate:
+        #             self.food_string[previous_index] = 0
+        #             while not sum(self.food_string) == self.N_FOOD_RESOURCE:
+        #                 self.food_string[random.randint(0,self.n_tiles - 1)] = 1
+        #             self.food_coords = np.where(self.food_matrix == 1)
+        # elif direction[4]:
+        #     if water_to_relocate and self.agent_water >= self.MAX_WATER:
+        #         self.water_string[previous_index] = 0
+        #         while not sum(self.water_string) == self.N_WATER_RESOURCE:
+        #             self.water_string[random.randint(0,self.n_tiles - 1)] = 1
+        #         self.water_coords = np.where(self.water_matrix == 1)
+        #     if food_to_relocate and self.agent_food >= self.MAX_FOOD:
+        #         self.food_string[previous_index] = 0
+        #         while not sum(self.food_string) == self.N_FOOD_RESOURCE:
+        #             self.food_string[random.randint(0,self.n_tiles - 1)] = 1
+        #         self.food_coords = np.where(self.food_matrix == 1)
+
+
+        
+        # update to factor evaluation
+        # if direction == 'w' or direction == 0:
+        #     if self.agent_coord[0] > 0:
+        #         self.agent_coord[0] = self.agent_coord[0] - 1
+        #         if water_to_relocate:
+        #             self.water_string[previous_index] = 0
+        #             while not sum(self.water_string) == self.N_WATER_RESOURCE:
+        #                 self.water_string[random.randint(0,self.n_tiles - 1)] = 1
+        #             self.water_coords = np.where(self.water_matrix == 1)
+        #         if food_to_relocate:
+        #             self.food_string[previous_index] = 0
+        #             while not sum(self.food_string) == self.N_FOOD_RESOURCE:
+        #                 self.food_string[random.randint(0,self.n_tiles - 1)] = 1
+        #             self.food_coords = np.where(self.food_matrix == 1)
+        # elif direction == 'a' or direction == 1:
+        #     if self.agent_coord[1] > 0:
+        #         self.agent_coord[1] = self.agent_coord[1] - 1
+        #         if water_to_relocate:
+        #             self.water_string[previous_index] = 0
+        #             while not sum(self.water_string) == self.N_WATER_RESOURCE:
+        #                 self.water_string[random.randint(0,self.n_tiles - 1)] = 1
+        #             self.water_coords = np.where(self.water_matrix == 1)
+        #         if food_to_relocate:
+        #             self.food_string[previous_index] = 0
+        #             while not sum(self.food_string) == self.N_FOOD_RESOURCE:
+        #                 self.food_string[random.randint(0,self.n_tiles - 1)] = 1
+        #             self.food_coords = np.where(self.food_matrix == 1)
+        # elif direction == 's' or direction == 2:
+        #     if self.agent_coord[0] < self.WORLD_SIZE_2 - 1:
+        #         self.agent_coord[0] = self.agent_coord[0] + 1
+        #         if water_to_relocate:
+        #             self.water_string[previous_index] = 0
+        #             while not sum(self.water_string) == self.N_WATER_RESOURCE:
+        #                 self.water_string[random.randint(0,self.n_tiles - 1)] = 1
+        #             self.water_coords = np.where(self.water_matrix == 1)
+        #         if food_to_relocate:
+        #             self.food_string[previous_index] = 0
+        #             while not sum(self.food_string) == self.N_FOOD_RESOURCE:
+        #                 self.food_string[random.randint(0,self.n_tiles - 1)] = 1
+        #             self.food_coords = np.where(self.food_matrix == 1)
+        # elif direction == 'd' or direction == 3:
+        #     if self.agent_coord[1] < self.WORLD_SIZE_1 - 1:
+        #         self.agent_coord[1] = self.agent_coord[1] + 1
+        #         if water_to_relocate:
+        #             self.water_string[previous_index] = 0
+        #             while not sum(self.water_string) == self.N_WATER_RESOURCE:
+        #                 self.water_string[random.randint(0,self.n_tiles - 1)] = 1
+        #             self.water_coords = np.where(self.water_matrix == 1)
+        #         if food_to_relocate:
+        #             self.food_string[previous_index] = 0
+        #             while not sum(self.food_string) == self.N_FOOD_RESOURCE:
+        #                 self.food_string[random.randint(0,self.n_tiles - 1)] = 1
+        #             self.food_coords = np.where(self.food_matrix == 1)
+        # elif direction == ' ' or direction == 4:
+
 
         # update physiology
         self.agent_water -= 1
@@ -281,8 +387,10 @@ class GridWorld():
         
 
         # self.world_dynamics()
-        if random.random() < self.RESOURCE_RELOCATE_RATE:
-            self.respawn_resources()
+        self.relocate_resources()
+        
+        # if random.random() < self.RESOURCE_RELOCATE_RATE:
+        #     self.respawn_resources()
 
 
 
@@ -320,10 +428,16 @@ class GridWorld():
             # print("water: "+ str(self.agent_water))
             # print("food: "+ str(self.agent_food))
 
-        
-        return ()
+        # unroll everything
+        state_representation = np.append(self.agent_water_view, self.agent_food_view)
+        state_representation = np.append(state_representation, self.agent_land_view)
+        state_representation = np.append(state_representation, self.agent_water)
+        state_representation = np.append(state_representation, self.agent_food)
 
+        #print(state_representation)
+        return state_representation
 
+    
 
 
 
