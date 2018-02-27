@@ -1,6 +1,8 @@
 import GridWorldUI
 import random
 import numpy as np
+from time import gmtime, strftime
+
 
 
 
@@ -9,8 +11,8 @@ import numpy as np
 class GridWorld():
     
     # World CONSTANTS 
-    WORLD_SIZE_1 = 10
-    WORLD_SIZE_2 = 10
+    WORLD_SIZE_1 = 15
+    WORLD_SIZE_2 = 15
     N_WATER_RESOURCE = 10
     N_FOOD_RESOURCE = 10
     RESOURCE_RELOCATE_RATE = 0.01 ## probability that a resource relocate. Setting to 0 disables relocation.
@@ -28,12 +30,16 @@ class GridWorld():
     AGENT_SIGHT = 2
 
     # SIMULATION CONSTANTS
-    VISUALIZE = True
+    VISUALIZE = False
+    WRITE_TO_FILE = True
     DEBUG = False
+    
 
     def __init__(self):
         # initialize simulator
         self.counter = 0
+        self.current_mean_physiology = [0,0]
+        self.alive_step = 0
         
         # initialize world
         self.n_tiles = self.WORLD_SIZE_1 * self.WORLD_SIZE_2
@@ -64,6 +70,10 @@ class GridWorld():
             self.ui.update_water(self.water_coords[0], self.water_coords[1])
             self.ui.update_food(self.food_coords[0], self.food_coords[1])
             self.ui.update_agent_view(self.agent_land_view,self.agent_water_view,self.agent_food_view)
+        
+        if self.WRITE_TO_FILE:
+            self.file_handler = open("physiology"+"-"+strftime("%Y%m%d%H%M", gmtime())+".csv", "w")
+            self.file_handler.write("Water,Food,Alive_step\n")
             
             
 
@@ -225,8 +235,8 @@ class GridWorld():
         # else: 
         #     food_to_relocate = False
 
-        self.counter += 1
-        print ("step: " + str(self.counter))
+        #self.counter += 1
+        #print ("step: " + str(self.counter))
 
         # move
         if direction[0]:
@@ -383,6 +393,19 @@ class GridWorld():
 
         if self.food_matrix[self.agent_coord[0], self.agent_coord[1]] == 1:
             self.agent_food += self.REPLENISH_RATE
+
+        # limit the physiology in the range of [0, max]
+        if self.agent_water < 0:
+            self.agent_water = 0
+        
+        if self.agent_water > self.MAX_WATER:
+            self.agent_water = self.MAX_WATER
+
+        if self.agent_food < 0:
+            self.agent_food = 0
+        
+        if self.agent_food > self.MAX_FOOD:
+            self.agent_food = self.MAX_FOOD
         
         
 
@@ -431,10 +454,37 @@ class GridWorld():
         # unroll everything
         state_representation = np.append(self.agent_water_view, self.agent_food_view)
         state_representation = np.append(state_representation, self.agent_land_view)
-        state_representation = np.append(state_representation, self.agent_water)
-        state_representation = np.append(state_representation, self.agent_food)
+        state_representation = np.append(state_representation, self.agent_water / self.MAX_WATER) # normalize it
+        state_representation = np.append(state_representation, self.agent_food / self.MAX_FOOD) #normalize it 
 
-        #print(state_representation)
+
+        if self.agent_food > 0 and self.agent_water>0:
+            self.alive_step += 1
+        self.counter += 1
+        self.current_mean_physiology[0] += self.agent_water
+        self.current_mean_physiology[1] += self.agent_food
+        if self.counter == 2000:
+            
+            print("avg water over the last 2000 steps:")
+            print(self.current_mean_physiology[0]/2000)
+            print("avg food over the last 2000 steps:")
+            print(self.current_mean_physiology[1]/2000)
+            if self.WRITE_TO_FILE:
+                self.file_handler.write(
+                    str(self.current_mean_physiology[0]/2000)+
+                    ","+str(self.current_mean_physiology[1]/2000)+","+
+                    str(self.alive_step)+"\n")
+            
+            self.current_mean_physiology = [0,0]
+            self.alive_step = 0
+            self.counter = 0
+
+
+        # if self.WRITE_TO_FILE:
+        #     self.file_handler.write(str(self.agent_water)+","+str(self.agent_food)+"\n")
+
+
+        
         return state_representation
 
     

@@ -1,41 +1,49 @@
 from NN import NeuralNetwork
+from NNReLU import NNReLU
 import GridWorld
 import numpy as np
 from collections import deque 
 import random
 from time import sleep
 import copy
+import pickle
+from time import gmtime, strftime
+
+
 
 class RL():
     # 25 water sight, 25 food sight, 25 land sight
     # previous 2 turns' actions: 2 * 5
     # 2 physiologies
     
-    GAMMA = 0.5
+    GAMMA = 0.7
     STATE_FEATURES = 25 + 25 + 25 + 2 * 5 + 2
     ACTIONS = 5
     INPUT_DIM = STATE_FEATURES + ACTIONS
-    NN_STRUCTURE = [INPUT_DIM, 4,4,4]
+    NN_STRUCTURE = [INPUT_DIM, 100,100,100,100,20]
     SWITCH_AT = 2000
     ACTION_FACTORS = [[1,0,0,0,0],[0,1,0,0,0],[0,0,1,0,0],[0,0,0,1,0],[0,0,0,0,1]]
-
+    BACKUP_NN = True
 
     def __init__(self):
         self.gw = GridWorld.GridWorld()
         self.nets = []
         
         # create two N-NETS for fixed Q-targets switches
-        self.nets.append(NeuralNetwork())
-        self.nets.append(NeuralNetwork())
-        self.nets[0].new(self.NN_STRUCTURE)
-        self.nets[1].new(self.NN_STRUCTURE)
+        self.nets.append(NNReLU(self.NN_STRUCTURE))
+        self.nets.append(NNReLU(self.NN_STRUCTURE))
+        #self.nets[0].new(self.NN_STRUCTURE)
+        #self.nets[1].new(self.NN_STRUCTURE)
         self.cache_index = 0
         self.active_index = 1
 
         # epsilon to modify the greediness
         self.epsilon = 1
-        # epsilon := 1/k
+        # epsilon := 1/ (1+ k/10) 
         self.k = 1
+
+        # step counter
+        self.step = 0
 
         # initialize starting situations
         self.state = self.gw.action(self.ACTION_FACTORS[4])
@@ -43,8 +51,11 @@ class RL():
         self.water_remembered = self.state[-1]
         self.food_remembered = self.state[-2]
 
-    def run(self):
+        if self.BACKUP_NN:
+            self.backup_name = "NN" + "-"+strftime("%Y%m%d%H%M", gmtime()) +".pkl"
 
+    def run(self):
+        
         while True:
             transitions = []
             
@@ -96,10 +107,15 @@ class RL():
                 self.state = self.gw.action(self.action)
 
                 # immediate reward
-                if self.state[-1] >= 0 and self.state[-2] >= 0:
+                # if stays alive, gets + 1
+                if self.state[-1] > 0 and self.state[-2] > 0:
                     self.reward = 5
-                elif self.state[-1] >= self.water_remembered or self.state[-2] >= self.food_remembered:
+                
+                # if one variable is down, gets 0
+                elif (self.state[-1] > 0) ^ (self.state[-2] > 0):
                     self.reward = 0
+                
+                # if both are down, gets -1
                 else:
                     self.reward = -1
                 
@@ -132,21 +148,36 @@ class RL():
                 predicted_value = self.reward + s_prime_value * self.GAMMA
                 #input("go")
                 #sleep(0.01)
-                print("target = " + str(predicted_value))
+                
                 
                 current_transition.append(predicted_value)
                 self.nets[self.active_index].train(current_transition[0], current_transition[1])
-                print("respon = " + str(self.nets[self.active_index].predict(current_transition[0])))
+                
+                if self.step == 2000:
+                    response = self.nets[self.active_index].predict(current_transition[0])
+                    print("target = " + str(predicted_value))
+                    print("respon = " + str(response))
+                    print("erro^2 = " + str((predicted_value-response)**2))
+                    print("------------------------------------------------")
+                    self.step = 0
+                
+                self.step += 1
 
                 transitions.append(current_transition)
                 
             self.k += 1
+            self.epsilon = 1/(1 + self.k/100)
 
-            #print(self.epsilon)
+            
+
+
+            print("k = " + str(self.k))
+            print("epsilon = "+str(self.epsilon))
+            
             # train again using experience replay
             shuffle = random.sample(range(self.SWITCH_AT), self.SWITCH_AT)
             
-            print(len(transitions))
+            #print(len(transitions))
 
             for i in shuffle:
                 self.nets[self.active_index].train(transitions[i][0],transitions[i][1])
@@ -154,6 +185,13 @@ class RL():
 
             # update cache
             self.nets[self.cache_index] = copy.deepcopy(self.nets[self.active_index])
+
+            if self.BACKUP_NN:
+                if self.k % 20 == 0:
+                    with open(self.backup_name, 'wb') as dumpNN:
+                        pickle.dump(self.nets[self.cache_index], dumpNN, pickle.HIGHEST_PROTOCOL)
+
+
             
             
             
