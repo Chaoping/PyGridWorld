@@ -9,7 +9,7 @@ LEAKY_COEFICIENT = 0.01
 class NNReLU():
     
     # learning rate
-    ETA = 0.001
+    ETA = 0.01
 
     def __init__(self, structure = None, load = False, weights = None):
         # initialize a new NNReLU class
