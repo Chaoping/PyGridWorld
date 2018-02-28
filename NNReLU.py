@@ -22,12 +22,12 @@ class NNReLU():
                     
             for i in range(len(structure)-1):
                 self.weights.append(
-                    np.random.rand(structure[i+1], structure[i] + 1) /10 
+                    np.random.rand(structure[i+1], structure[i] + 1) /50 
                 )
                 self.gradients.append(np.zeros(self.weights[i].shape))
     
             # weights for the output layer:
-            self.final_weights = (np.random.rand(1, structure[-1] + 1)-0.5) / 10
+            self.final_weights = (np.random.rand(1, structure[-1] + 1)-0.5) / 50
             self.final_gradients = np.zeros(self.final_weights.shape)
 
             # self.report_count = 0

@@ -8,6 +8,8 @@ from time import sleep
 import copy
 import pickle
 from time import gmtime, strftime
+import os
+import glob
 
 
 
@@ -20,20 +22,26 @@ class RL():
     STATE_FEATURES = 25 + 25 + 25 + 2 * 5 + 2
     ACTIONS = 5
     INPUT_DIM = STATE_FEATURES + ACTIONS
-    NN_STRUCTURE = [INPUT_DIM, 100,100,100,100,20]
+    NN_STRUCTURE = [INPUT_DIM, 100,100,100,100,100,100,20]
     SWITCH_AT = 2000
     ACTION_FACTORS = [[1,0,0,0,0],[0,1,0,0,0],[0,0,1,0,0],[0,0,0,1,0],[0,0,0,0,1]]
-    BACKUP_NN = True
+    
 
-    def __init__(self):
-        self.gw = GridWorld.GridWorld()
+    def __init__(self, wait_for_input = False,load = False, trained_net = None, visualize = False, write_to_file = False, backup_NN = False, training = True):
+        self.gw = GridWorld.GridWorld(visualize, write_to_file)
         self.nets = []
+        self.backup_NN = backup_NN
+        self.training = training
         
-        # create two N-NETS for fixed Q-targets switches
-        self.nets.append(NNReLU(self.NN_STRUCTURE))
-        self.nets.append(NNReLU(self.NN_STRUCTURE))
-        #self.nets[0].new(self.NN_STRUCTURE)
-        #self.nets[1].new(self.NN_STRUCTURE)
+        if load:
+            # load existing nets
+            self.nets.append(pickle.load(open( trained_net, "rb" )))
+            self.nets.append(copy.deepcopy(self.nets[0]))
+        else:
+            # create two N-NETS for fixed Q-targets switches
+            self.nets.append(NNReLU(self.NN_STRUCTURE))
+            self.nets.append(NNReLU(self.NN_STRUCTURE))
+
         self.cache_index = 0
         self.active_index = 1
 
@@ -51,19 +59,17 @@ class RL():
         self.water_remembered = self.state[-1]
         self.food_remembered = self.state[-2]
 
-        if self.BACKUP_NN:
+        if self.backup_NN:
             self.backup_name = "NN" + "-"+strftime("%Y%m%d%H%M", gmtime()) +".pkl"
 
     def run(self):
-        
         while True:
-            transitions = []
-            
             # remember a list of transitions for experience replay
             # train on the transitions after a 
             # fixed number of steps
+            transitions = []
 
-            for step in range(self.SWITCH_AT):
+            for s in range(self.SWITCH_AT):
                 current_transition = []
                 # Each transition has several parts
                 # plug in supervised learning:
@@ -75,16 +81,13 @@ class RL():
                     self.previous_actions
                 ))
 
-                
-                
-                
                 # pick an action
                 # epsilon probability to pick at random
                 # 1 - epsilon probability to pick greedy
-                if random.random() < self.epsilon:
+                # also, explorating is only needed when training is flagged.
+                if random.random() < self.epsilon and self.training:
                     self.action = self.ACTION_FACTORS[random.randint(0,4)]
                 else:
-                    
                     # pick a greedy action
                     Q = []
                     for i in range(5):                         
@@ -93,9 +96,7 @@ class RL():
                         Q.append(
                             # compare the Q
                             self.nets[self.cache_index].predict(                           
-                                self.decision_factor.reshape(self.INPUT_DIM,1)))
-                        
-
+                                self.decision_factor.reshape(self.INPUT_DIM,1)))                        
                     self.action = self.ACTION_FACTORS[Q.index(max(Q))]
 
                 # store decision factor (combination of states and action)
@@ -142,16 +143,19 @@ class RL():
                     Q.append(
                         # compare the Q
                         self.nets[self.cache_index].predict(                           
-                            self.decision_factor.reshape(self.INPUT_DIM,1)))
-                    #print("Q_"+str(i)+" = "+str(Q[i]))
+                            self.decision_factor.reshape(self.INPUT_DIM,1))
+                        )
+
                 s_prime_value = max(Q)
                 predicted_value = self.reward + s_prime_value * self.GAMMA
-                #input("go")
+                #
+                if wait_for_input:
+                    input("go")
                 #sleep(0.01)
                 
-                
-                current_transition.append(predicted_value)
-                self.nets[self.active_index].train(current_transition[0], current_transition[1])
+                if self.training:
+                    current_transition.append(predicted_value)
+                    self.nets[self.active_index].train(current_transition[0], current_transition[1])
                 
                 if self.step == 2000:
                     response = self.nets[self.active_index].predict(current_transition[0])
@@ -166,7 +170,7 @@ class RL():
                 transitions.append(current_transition)
                 
             self.k += 1
-            self.epsilon = 1/(1 + self.k/100)
+            self.epsilon = 1/(1 + self.k/10)
 
             
 
@@ -179,22 +183,17 @@ class RL():
             
             #print(len(transitions))
 
-            for i in shuffle:
-                self.nets[self.active_index].train(transitions[i][0],transitions[i][1])
-                #print("replaying....")
+            if self.training:
+                for i in shuffle:
+                    self.nets[self.active_index].train(transitions[i][0],transitions[i][1])
+                    #print("replaying....")
 
-            # update cache
-            self.nets[self.cache_index] = copy.deepcopy(self.nets[self.active_index])
+                # update cache
+                self.nets[self.cache_index] = copy.deepcopy(self.nets[self.active_index])
 
-            if self.BACKUP_NN:
-                if self.k % 20 == 0:
-                    with open(self.backup_name, 'wb') as dumpNN:
-                        pickle.dump(self.nets[self.cache_index], dumpNN, pickle.HIGHEST_PROTOCOL)
-
-
-            
-            
-            
+                if self.backup_NN:
+                    if self.k % 20 == 0:
+                        pickle.dump(self.nets[self.cache_index], open(self.backup_name, 'wb'))
 
 
     # evaluate an action given s. 
@@ -204,11 +203,46 @@ class RL():
         return self.nets[self.cache_index].predict(x)
 
 
+os.system('clear')
+print("Welcome to use GridWorld Simulator!")
+print("Setting up the simulation...")
+
+if input("Wait for Enter at every step? (Default is No)") == 'Y':
+    wait_for_input = True
+else:
+    wait_for_input = False
+
+if input("Use existing neural network? (Default is to train a new neural network)") == 'Y':
+    load = True
+    print("The following files are available:")
+    print(glob.glob('*.pkl'))
+    trained_net = input("Please provide the filename you wish to load:")
+else:
+    load = False
+    trained_net = None
     
+if input("Visualize the movement? (Default is No)") == 'Y':
+    visualize = True
+else:
+    visualize = False
 
-        
+if input("Write physiology log? (Default is No)") == 'Y':
+    write_to_file = True
+else:
+    write_to_file = False
 
+if input("Backup trained results? (Default is No)") == 'Y':
+    backup_NN = True
+else:
+    backup_NN = False
 
-rl = RL()
+if input("Training? (Default is Y)") == 'N':
+    training = False
+else:
+    training = True
+
+#load = False, trained_net = None, visualize = False
+
+rl = RL(wait_for_input, load, trained_net, visualize, write_to_file, backup_NN, training)
 rl.run()
-        
+    

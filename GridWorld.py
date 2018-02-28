@@ -15,7 +15,7 @@ class GridWorld():
     WORLD_SIZE_2 = 15
     N_WATER_RESOURCE = 10
     N_FOOD_RESOURCE = 10
-    RESOURCE_RELOCATE_RATE = 0.01 ## probability that a resource relocate. Setting to 0 disables relocation.
+    RESOURCE_RELOCATE_RATE = 0.002 ## probability that a resource relocate. Setting to 0 disables relocation.
      
     
     # Agent CONSTANTS
@@ -30,12 +30,14 @@ class GridWorld():
     AGENT_SIGHT = 2
 
     # SIMULATION CONSTANTS
-    VISUALIZE = False
-    WRITE_TO_FILE = True
     DEBUG = False
     
 
-    def __init__(self):
+    def __init__(self, visualize = False, write_to_file = False):
+        # take args
+        self.visualize = visualize
+        self.write_to_file = write_to_file
+        
         # initialize simulator
         self.counter = 0
         self.current_mean_physiology = [0,0]
@@ -59,7 +61,7 @@ class GridWorld():
         self.update_view()
          
         # Visualize
-        if self.VISUALIZE:
+        if self.visualize:
             self.ui = GridWorldUI.GridWorldUI(
                 self.WORLD_SIZE_1,
                 self.WORLD_SIZE_2, 
@@ -71,7 +73,7 @@ class GridWorld():
             self.ui.update_food(self.food_coords[0], self.food_coords[1])
             self.ui.update_agent_view(self.agent_land_view,self.agent_water_view,self.agent_food_view)
         
-        if self.WRITE_TO_FILE:
+        if self.write_to_file:
             self.file_handler = open("physiology"+"-"+strftime("%Y%m%d%H%M", gmtime())+".csv", "w")
             self.file_handler.write("Water,Food,Alive_step\n")
             
@@ -423,7 +425,7 @@ class GridWorld():
         
 
 
-        if self.VISUALIZE:
+        if self.visualize:
             self.ui.move_agent(self.agent_coord[0],self.agent_coord[1])
             self.ui.update_water(self.water_coords[0], self.water_coords[1])
             self.ui.update_food(self.food_coords[0], self.food_coords[1])
@@ -464,12 +466,11 @@ class GridWorld():
         self.current_mean_physiology[0] += self.agent_water
         self.current_mean_physiology[1] += self.agent_food
         if self.counter == 2000:
-            
-            print("avg water over the last 2000 steps:")
-            print(self.current_mean_physiology[0]/2000)
-            print("avg food over the last 2000 steps:")
-            print(self.current_mean_physiology[1]/2000)
-            if self.WRITE_TO_FILE:
+            print("Average performance over the last 2000 steps:")
+            print("Water\tFood\tAlive")
+            print(str(self.current_mean_physiology[0]/2000)+"\t"+str(self.current_mean_physiology[1]/2000)+"\t"+str(self.alive_step))
+
+            if self.write_to_file:
                 self.file_handler.write(
                     str(self.current_mean_physiology[0]/2000)+
                     ","+str(self.current_mean_physiology[1]/2000)+","+
@@ -480,7 +481,7 @@ class GridWorld():
             self.counter = 0
 
 
-        # if self.WRITE_TO_FILE:
+        # if self.write_to_file:
         #     self.file_handler.write(str(self.agent_water)+","+str(self.agent_food)+"\n")
 
 
