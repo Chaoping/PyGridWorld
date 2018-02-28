@@ -22,7 +22,7 @@ class RL():
     STATE_FEATURES = 25 + 25 + 25 + 2 * 5 + 2
     ACTIONS = 5
     INPUT_DIM = STATE_FEATURES + ACTIONS
-    NN_STRUCTURE = [INPUT_DIM, 100,100,100,100,100,100,20]
+    NN_STRUCTURE = [INPUT_DIM, 100,100,100,100,20]
     SWITCH_AT = 2000
     ACTION_FACTORS = [[1,0,0,0,0],[0,1,0,0,0],[0,0,1,0,0],[0,0,0,1,0],[0,0,0,0,1]]
     
@@ -47,7 +47,7 @@ class RL():
 
         # epsilon to modify the greediness
         self.epsilon = 1
-        # epsilon := 1/ (1+ k/10) 
+        # epsilon := 1/ (1+ k/100) 
         self.k = 1
 
         # step counter
@@ -170,7 +170,7 @@ class RL():
                 transitions.append(current_transition)
                 
             self.k += 1
-            self.epsilon = 1/(1 + self.k/10)
+            self.epsilon = 1/(1 + self.k/100)
 
             
 
